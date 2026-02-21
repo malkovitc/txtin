@@ -1,0 +1,6 @@
+.build/
+.sandbox-home/
+VoicePasteMenuBarApp.app/
+txtin.app/
+dist/
+.DS_Store
