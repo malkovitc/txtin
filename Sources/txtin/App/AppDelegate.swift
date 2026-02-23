@@ -18,7 +18,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         menuBarManager = MenuBarManager(
             coordinator: TxtinCoordinator.shared,
-            appState: AppState.shared
+            appState: AppState.shared,
+            permissions: PermissionsManager.shared,
+            config: ConfigManager.shared
         )
     }
 

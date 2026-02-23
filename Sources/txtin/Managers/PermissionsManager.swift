@@ -42,7 +42,6 @@ final class PermissionsManager: ObservableObject {
         let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
         _ = AXIsProcessTrustedWithOptions(options)
         openAccessibilitySettings()
-        revealCurrentAppInFinder()
         startPermissionPolling()
     }
 
@@ -67,12 +66,11 @@ final class PermissionsManager: ObservableObject {
         NSWorkspace.shared.activateFileViewerSelecting([appURL])
     }
 
-    private func startPermissionPolling() {
+    func startPermissionPolling() {
         permissionPollingTask?.cancel()
         permissionPollingTask = Task { [weak self] in
             guard let self else { return }
-            for _ in 0..<30 {
-                if Task.isCancelled { return }
+            while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 500_000_000)
                 self.refresh()
                 if self.microphoneGranted && self.accessibilityGranted {
@@ -80,5 +78,10 @@ final class PermissionsManager: ObservableObject {
                 }
             }
         }
+    }
+
+    func stopPermissionPolling() {
+        permissionPollingTask?.cancel()
+        permissionPollingTask = nil
     }
 }

@@ -18,4 +18,12 @@ final class AppState: ObservableObject {
     func clearError() {
         lastError = nil
     }
+
+    func clearPermissionErrorIfGranted(microphone: Bool, accessibility: Bool) {
+        guard let lastError, lastError.contains("permission") else { return }
+        if microphone && accessibility {
+            clearError()
+            statusText = "Idle"
+        }
+    }
 }

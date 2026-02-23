@@ -15,11 +15,12 @@ enum VoiceRecorderError: LocalizedError {
     }
 }
 
+@MainActor
 final class VoiceRecorder: NSObject {
     private var recorder: AVAudioRecorder?
     private var currentFileURL: URL?
 
-    func start() throws -> URL {
+    func start() throws {
         let fileURL = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("txtin-\(Int(Date().timeIntervalSince1970 * 1000)).m4a")
 
@@ -39,7 +40,6 @@ final class VoiceRecorder: NSObject {
 
         self.recorder = recorder
         self.currentFileURL = fileURL
-        return fileURL
     }
 
     func stop() throws -> URL {

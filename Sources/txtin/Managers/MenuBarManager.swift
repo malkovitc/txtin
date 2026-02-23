@@ -4,25 +4,24 @@ import SwiftUI
 
 @MainActor
 final class MenuBarManager: NSObject {
-    static var shared: MenuBarManager?
-    static weak var current: MenuBarManager?
-
     private let onboardingPopoverShownKey = "txtin.onboarding_popover_shown"
     private let statusItem: NSStatusItem
     private let coordinator: TxtinCoordinator
     private let appState: AppState
+    private let permissions: PermissionsManager
+    private let config: ConfigManager
     private let popover = NSPopover()
     private var cancellables = Set<AnyCancellable>()
     private var statusItemRecoveryWorkItem: DispatchWorkItem?
 
-    init(coordinator: TxtinCoordinator, appState: AppState) {
+    init(coordinator: TxtinCoordinator, appState: AppState, permissions: PermissionsManager, config: ConfigManager) {
         self.statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         self.coordinator = coordinator
         self.appState = appState
+        self.permissions = permissions
+        self.config = config
         super.init()
 
-        Self.shared = self
-        Self.current = self
         bindState()
         setupStatusItem()
         setupPopover()
@@ -62,8 +61,8 @@ final class MenuBarManager: NSObject {
     private func setupPopover() {
         let content = SettingsView()
             .environmentObject(appState)
-            .environmentObject(PermissionsManager.shared)
-            .environmentObject(ConfigManager.shared)
+            .environmentObject(permissions)
+            .environmentObject(config)
             .environmentObject(coordinator)
 
         let hosting = NSHostingController(rootView: content)
@@ -147,6 +146,9 @@ final class MenuBarManager: NSObject {
             setupStatusItem()
         }
         guard let button = statusItem.button else { return }
+
+        permissions.refresh()
+        config.refresh()
 
         if !popover.isShown {
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)

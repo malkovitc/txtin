@@ -45,6 +45,7 @@ private func hotkeyEventHandler(
     return OSStatus(eventNotHandledErr)
 }
 
+@MainActor
 final class HotkeyManager {
     static let shared = HotkeyManager()
 
@@ -60,10 +61,6 @@ final class HotkeyManager {
 
     private init() {
         installHandler()
-    }
-
-    deinit {
-        unregisterHotkey()
     }
 
     @discardableResult

@@ -1,6 +1,7 @@
 import Foundation
 import AppKit
 import ApplicationServices
+import Carbon.HIToolbox
 
 enum TextInsertionResult {
     case inserted
@@ -89,9 +90,10 @@ final class TextInsertionService {
     }
 
     private func simulatePasteShortcut() -> Bool {
+        let vKey = CGKeyCode(kVK_ANSI_V)
         guard let source = CGEventSource(stateID: .hidSystemState),
-              let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 9, keyDown: true),
-              let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 9, keyDown: false) else {
+              let keyDown = CGEvent(keyboardEventSource: source, virtualKey: vKey, keyDown: true),
+              let keyUp = CGEvent(keyboardEventSource: source, virtualKey: vKey, keyDown: false) else {
             return false
         }
 

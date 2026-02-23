@@ -111,7 +111,7 @@ final class TxtinCoordinator: ObservableObject {
         saveTargetApp()
 
         do {
-            _ = try recorder.start()
+            try recorder.start()
             recordingStartedAt = Date()
             appState.isRecording = true
             appState.statusText = "Recording..."
@@ -158,8 +158,7 @@ final class TxtinCoordinator: ObservableObject {
         }
 
         let insertionTarget = targetAppForInsertion
-        let generation = transcriptionGeneration + 1
-        transcriptionGeneration = generation
+        let generation = transcriptionGeneration
 
         transcriptionTask?.cancel()
         transcriptionTask = Task { [weak self] in
@@ -240,11 +239,9 @@ final class TxtinCoordinator: ObservableObject {
     }
 
     private func reconcilePermissionErrorIfNeeded() {
-        guard let lastError = appState.lastError else { return }
-        guard lastError.contains("permission") else { return }
-        if permissions.microphoneGranted && permissions.accessibilityGranted {
-            appState.clearError()
-            appState.statusText = "Idle"
-        }
+        appState.clearPermissionErrorIfGranted(
+            microphone: permissions.microphoneGranted,
+            accessibility: permissions.accessibilityGranted
+        )
     }
 }

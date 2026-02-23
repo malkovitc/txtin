@@ -1,5 +1,4 @@
 import SwiftUI
-import AVFoundation
 import AppKit
 
 struct SettingsView: View {
@@ -8,7 +7,6 @@ struct SettingsView: View {
     @EnvironmentObject private var config: ConfigManager
 
     @State private var deepgramKeyInput = ""
-    private let permissionRefreshTimer = Timer.publish(every: 3.0, on: .main, in: .common).autoconnect()
 
     var body: some View {
         ZStack {
@@ -35,11 +33,6 @@ struct SettingsView: View {
             permissions.refresh()
             config.refresh()
         }
-        .onReceive(permissionRefreshTimer) { _ in
-            guard !permissions.microphoneGranted || !permissions.accessibilityGranted else { return }
-            permissions.refresh()
-            reconcileRuntimePermissionError()
-        }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             permissions.refresh()
             reconcileRuntimePermissionError()
@@ -47,12 +40,10 @@ struct SettingsView: View {
     }
 
     private func reconcileRuntimePermissionError() {
-        guard let lastError = appState.lastError else { return }
-        guard lastError.contains("permission") else { return }
-        if permissions.microphoneGranted && permissions.accessibilityGranted {
-            appState.clearError()
-            appState.statusText = "Idle"
-        }
+        appState.clearPermissionErrorIfGranted(
+            microphone: permissions.microphoneGranted,
+            accessibility: permissions.accessibilityGranted
+        )
     }
 
     private var header: some View {
@@ -119,16 +110,9 @@ struct SettingsView: View {
 
                 Spacer()
 
-                Picker("", selection: languageBinding) {
-                    Text("AUTO").tag("auto")
-                    Text("RU").tag("ru")
-                    Text("EN").tag("en")
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .frame(width: 158)
-                .font(.terminal(9, weight: .semibold))
-                .colorScheme(.light)
+                LanguageSegmentedControl(selection: languageBinding, options: [
+                    ("AUTO", "auto"), ("RU", "ru"), ("EN", "en")
+                ])
             }
             .padding(.top, 4)
         }
@@ -185,5 +169,48 @@ struct SettingsView: View {
             get: { config.transcriptionLanguage },
             set: { config.setTranscriptionLanguage($0) }
         )
+    }
+}
+
+// MARK: - Language Segmented Control
+
+private struct LanguageSegmentedControl: View {
+    @Binding var selection: String
+    let options: [(label: String, value: String)]
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(options, id: \.value) { option in
+                let isSelected = selection == option.value
+                Button(option.label) {
+                    selection = option.value
+                }
+                .buttonStyle(SegmentButtonStyle(isSelected: isSelected))
+            }
+        }
+        .background(TerminalTheme.panelSecondary)
+        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .stroke(TerminalTheme.border, lineWidth: 1)
+        )
+    }
+}
+
+private struct SegmentButtonStyle: ButtonStyle {
+    let isSelected: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.terminal(9, weight: .semibold))
+            .foregroundStyle(isSelected ? Color.black : TerminalTheme.textSecondary)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 5)
+            .background(
+                isSelected
+                    ? TerminalTheme.accent
+                    : (configuration.isPressed ? TerminalTheme.panel : Color.clear)
+            )
+            .contentShape(Rectangle())
     }
 }
